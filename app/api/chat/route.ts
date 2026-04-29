@@ -101,29 +101,34 @@ Go straight to the observation.
 
   const recentMessages = messages.slice(-10);
 
-const response = await fetch("https://api.openai.com/v1/chat/completions", {
+const response = await fetch("https://api.openai.com/v1/responses", {
   method: "POST",
   headers: {
     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...recentMessages,
-    ],
-    temperature: 0.7,
-    max_tokens: 120,
-  }),
+  model: "gpt-4o-mini",
+  input: [
+    {
+      role: "system",
+      content: systemPrompt,
+    },
+    ...recentMessages,
+  ],
+}),
 });
 
   const data = await response.json();
-  
-  //задержка
-  await new Promise(r => setTimeout(r, 600));
 
+if (!data.choices || !data.choices[0]) {
+  console.error("OpenAI error:", data);
   return NextResponse.json({
-    reply: data.choices[0].message.content,
+    reply: "Error: no response from AI",
   });
+}
+
+return NextResponse.json({
+  reply: data.output[0].content[0].text,
+});
 }
