@@ -5,6 +5,7 @@ export default function Home() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [mode, setMode] = useState<"soft" | "sharp">("sharp");
 
   const sendMessage = async () => {
     if (!input) return;
@@ -15,7 +16,7 @@ export default function Home() {
 
     const res = await fetch("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ messages: newMessages }),
+      body: JSON.stringify({ messages: newMessages, mode }),,
     });
 
     const data = await res.json();
@@ -44,7 +45,35 @@ export default function Home() {
         ))}
         <div ref={bottomRef} />
       </div>
+<div style={{ padding: 10, display: "flex", gap: 10 }}>
+  <button
+    onClick={() => setMode("soft")}
+    style={{
+      padding: "6px 10px",
+      background: mode === "soft" ? "#fff" : "#222",
+      color: mode === "soft" ? "#000" : "#fff",
+      border: "none",
+      borderRadius: 6,
+      cursor: "pointer",
+    }}
+  >
+    Soft
+  </button>
 
+  <button
+    onClick={() => setMode("sharp")}
+    style={{
+      padding: "6px 10px",
+      background: mode === "sharp" ? "#fff" : "#222",
+      color: mode === "sharp" ? "#000" : "#fff",
+      border: "none",
+      borderRadius: 6,
+      cursor: "pointer",
+    }}
+  >
+    Sharp
+  </button>
+</div>
       <div style={styles.inputBox}>
         <input
           style={styles.input}
