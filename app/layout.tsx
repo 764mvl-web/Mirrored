@@ -12,9 +12,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Mirrored",
-  description: "Reflect your thoughts back to you",
+export const metadata = {
+  title: "mirrored",
+  description: "Not advice. Just clarity.",
+
+  openGraph: {
+    title: "mirrored",
+    description: "Not advice. Just clarity.",
+    url: "https://mirrored-indol.vercel.app/",
+    siteName: "mirrored",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "mirrored",
+    description: "Not advice. Just clarity.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
