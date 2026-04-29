@@ -156,6 +156,8 @@ Always respond in the same language as the user.
 
   const recentMessages = messages.slice(-10);
 
+console.log("USER:", messages[messages.length - 1]?.content);
+
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
