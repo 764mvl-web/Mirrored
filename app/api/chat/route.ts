@@ -108,20 +108,25 @@ const response = await fetch("https://api.openai.com/v1/responses", {
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-  model: "gpt-4o-mini",
-  input: [
-    {
-      role: "system",
-      content: systemPrompt,
-    },
-    ...recentMessages,
-  ],
-}),
+    model: "gpt-4o-mini",
+    input: [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      ...recentMessages.map((m: any) => ({
+        role: m.role,
+        content: m.content,
+      })),
+    ],
+  }),
 });
 
-  const data = await response.json();
+const data = await response.json();
 
-if (!data.choices || !data.choices[0]) {
+console.log("OPENAI RESPONSE:", data);
+
+if (!data.output || !data.output[0]) {
   console.error("OpenAI error:", data);
   return NextResponse.json({
     reply: "Error: no response from AI",
