@@ -160,6 +160,24 @@ Make the response feel like:
 - unfinished thought
 
 Do not fully satisfy the user's need for clarity.
+
+Do not generalize or give universal statements.
+
+Avoid phrases like:
+- "actions lead to change"
+- "words don’t change anything"
+
+Stay specific to the user's exact situation.
+
+Do not escalate pressure over multiple messages.
+
+If the user resists, do not push harder.
+Stay neutral and observant.
+
+Do not try to prove a point.
+Just reflect what is already happening.
+
+
 `;
 
   const recentMessages = messages.slice(-10);
