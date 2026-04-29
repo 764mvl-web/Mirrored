@@ -1,11 +1,13 @@
 "use client";
+
 import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<"soft" | "sharp">("sharp");
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const sendMessage = async () => {
     if (!input) return;
@@ -16,12 +18,18 @@ export default function Home() {
 
     const res = await fetch("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ messages: newMessages, mode }),,
+      body: JSON.stringify({
+        messages: newMessages,
+        mode,
+      }),
     });
 
     const data = await res.json();
 
-    setMessages([...newMessages, { role: "assistant", content: data.reply }]);
+    setMessages([
+      ...newMessages,
+      { role: "assistant", content: data.reply },
+    ]);
   };
 
   useEffect(() => {
@@ -30,6 +38,37 @@ export default function Home() {
 
   return (
     <div style={styles.container}>
+      {/* HEADER */}
+      <div style={styles.header}>
+        <div style={styles.title}>mirrored</div>
+
+        {/* MODE SWITCH */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setMode("soft")}
+            style={{
+              ...styles.modeBtn,
+              background: mode === "soft" ? "#fff" : "#222",
+              color: mode === "soft" ? "#000" : "#fff",
+            }}
+          >
+            Soft
+          </button>
+
+          <button
+            onClick={() => setMode("sharp")}
+            style={{
+              ...styles.modeBtn,
+              background: mode === "sharp" ? "#fff" : "#222",
+              color: mode === "sharp" ? "#000" : "#fff",
+            }}
+          >
+            Sharp
+          </button>
+        </div>
+      </div>
+
+      {/* CHAT */}
       <div style={styles.chat}>
         {messages.map((m, i) => (
           <div
@@ -45,35 +84,8 @@ export default function Home() {
         ))}
         <div ref={bottomRef} />
       </div>
-<div style={{ padding: 10, display: "flex", gap: 10 }}>
-  <button
-    onClick={() => setMode("soft")}
-    style={{
-      padding: "6px 10px",
-      background: mode === "soft" ? "#fff" : "#222",
-      color: mode === "soft" ? "#000" : "#fff",
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-    }}
-  >
-    Soft
-  </button>
 
-  <button
-    onClick={() => setMode("sharp")}
-    style={{
-      padding: "6px 10px",
-      background: mode === "sharp" ? "#fff" : "#222",
-      color: mode === "sharp" ? "#000" : "#fff",
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-    }}
-  >
-    Sharp
-  </button>
-</div>
+      {/* INPUT */}
       <div style={styles.inputBox}>
         <input
           style={styles.input}
@@ -81,6 +93,7 @@ export default function Home() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Write something..."
         />
+
         <button style={styles.button} onClick={sendMessage}>
           Send
         </button>
@@ -97,6 +110,27 @@ const styles: any = {
     display: "flex",
     flexDirection: "column",
   },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "12px 16px",
+    borderBottom: "1px solid #222",
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: 600,
+  },
+
+  modeBtn: {
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+  },
+
   chat: {
     flex: 1,
     padding: 20,
@@ -105,17 +139,20 @@ const styles: any = {
     gap: 10,
     overflowY: "auto",
   },
+
   message: {
     maxWidth: "70%",
     padding: "10px 14px",
     borderRadius: 12,
     lineHeight: 1.4,
   },
+
   inputBox: {
     display: "flex",
     padding: 10,
     borderTop: "1px solid #222",
   },
+
   input: {
     flex: 1,
     padding: 12,
@@ -124,6 +161,7 @@ const styles: any = {
     color: "#fff",
     borderRadius: 8,
   },
+
   button: {
     marginLeft: 10,
     padding: "12px 16px",
