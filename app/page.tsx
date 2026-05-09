@@ -162,7 +162,41 @@ export default function Home() {
                     : {}),
                 }}
               >
-                {chat.title}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                        }}
+                      >
+                        {chat.title}
+                      </span>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+
+                          const filtered = chats.filter(
+                            (c) => c.id !== chat.id
+                          );
+
+                          setChats(filtered);
+
+                          if (activeChatId === chat.id) {
+                            setActiveChatId(
+                              filtered.length > 0
+                                ? filtered[0].id
+                                : null
+                            );
+                          }
+                        }}
+                        style={styles.deleteBtn}
+                      >
+                        ×
+                      </button>
+                    </div>
               </div>
             ))}
           </div>
@@ -261,7 +295,41 @@ export default function Home() {
                         : {}),
                     }}
                   >
-                    {chat.title}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                        }}
+                      >
+                        {chat.title}
+                      </span>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+
+                          const filtered = chats.filter(
+                            (c) => c.id !== chat.id
+                          );
+
+                          setChats(filtered);
+
+                          if (activeChatId === chat.id) {
+                            setActiveChatId(
+                              filtered.length > 0
+                                ? filtered[0].id
+                                : null
+                            );
+                          }
+                        }}
+                        style={styles.deleteBtn}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -569,6 +637,18 @@ const styles: any = {
     color: "white",
     fontSize: 16,
     outline: "none",
+  },
+
+  deleteBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    border: "1px solid #2a2a2a",
+    background: "#151515",
+    color: "#8a8a8a",
+    cursor: "pointer",
+    fontSize: 14,
+    flexShrink: 0,
   },
 
   sendBtn: {
