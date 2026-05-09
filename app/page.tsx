@@ -211,4 +211,64 @@ export default function Home() {
             ))
           )}
 
-          {isLoading && <div style={styles.loading
+          {isLoading && <div style={styles.loading}>Mirrored is reflecting...</div>}
+          <div ref={bottomRef} />
+        </div>
+
+        <div style={styles.inputArea}>
+          <input
+            style={styles.input}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Write what's on your mind..."
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            disabled={isLoading}
+          />
+          <button style={styles.sendBtn} onClick={sendMessage} disabled={isLoading || !input.trim()}>
+            →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const styles: any = {
+  container: { display: "flex", height: "100vh", background: "#0b0b0b", color: "#fff", fontFamily: "system-ui, sans-serif" },
+  sidebar: { width: 280, borderRight: "1px solid #222", display: "flex", flexDirection: "column" },
+  sidebarHeader: { padding: "20px 16px", borderBottom: "1px solid #222" },
+  logo: { fontSize: 24, fontWeight: 700, letterSpacing: "-1px" },
+  newChatBtn: { marginTop: 12, padding: "10px", background: "#fff", color: "#000", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, width: "100%" },
+  chatList: { flex: 1, overflowY: "auto", padding: "8px" },
+  chatItem: { padding: "10px 12px", borderRadius: 8, marginBottom: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 },
+  memoryDot: { color: "#4ade80", marginRight: 8 },
+  deleteBtn: { background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 16 },
+
+  main: { flex: 1, display: "flex", flexDirection: "column" },
+  topBar: { padding: "12px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  modeContainer: { display: "flex", gap: 6 },
+  modeBtn: { padding: "7px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 14 },
+  modelToggle: { display: "flex", background: "#111", borderRadius: 8, padding: 3 },
+  modelBtn: { padding: "6px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 14 },
+
+  chatArea: { flex: 1, padding: "40px 20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 },
+  onboarding: { margin: "auto", textAlign: "center", maxWidth: 520 },
+  message: { maxWidth: "72%", padding: "14px 18px", borderRadius: 14, lineHeight: 1.5 },
+  loading: { alignSelf: "flex-start", padding: "10px 16px", fontStyle: "italic", opacity: 0.6 },
+
+  inputArea: { padding: "16px 20px", borderTop: "1px solid #222", display: "flex", gap: 10 },
+  input: { flex: 1, padding: "15px 18px", background: "#111", border: "1px solid #333", borderRadius: 12, color: "#fff", fontSize: 16 },
+  sendBtn: { padding: "0 26px", background: "#fff", color: "#000", border: "none", borderRadius: 12, fontSize: 22, cursor: "pointer" },
+
+  primaryBtn: {
+    marginTop: 50,
+    padding: "14px 40px",
+    fontSize: 17,
+    background: "#fff",
+    color: "#000",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+};
