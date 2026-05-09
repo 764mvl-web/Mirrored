@@ -107,7 +107,6 @@ export default function Home() {
 
         <div style={styles.conversationItem}>New Conversation</div>
 
-        <div style={styles.avatar}>N</div>
       </div>
 
       <div style={styles.main}>
@@ -281,17 +280,7 @@ const styles: any = {
     color: "#fff",
   },
 
-  avatar: {
-    marginTop: "auto",
-    width: 38,
-    height: 38,
-    borderRadius: "50%",
-    background: "#111",
-    border: "1px solid #222",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  
 
   main: {
     flex: 1,
@@ -455,4 +444,3 @@ const styles: any = {
     transition: "0.2s",
   },
 };
-```
