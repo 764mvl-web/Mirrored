@@ -2,130 +2,55 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { messages, mode } = await req.json();
+    const { messages, mode, model, userMemory } = await req.json();
 
     const safeMode = mode || "sharp";
+    const isPremium = model === "premium";
 
-    let modeInstruction = "";
-    if (safeMode === "soft") {
-      modeInstruction = `
-Be gentler. Reduce tension. Avoid confrontation. 
-Keep responses calm, slightly curious and supportive.`;
-    } else {
-      modeInstruction = `
-Be direct. Allow slight discomfort. 
-Stay sharp, but controlled. Do not become aggressive.`;
-    }
+    const modeInstruction = safeMode === "soft" 
+      ? "Be gentler, calmer, and more supportive. Reduce tension."
+      : "Be direct, sharp, and honest. Allow slight discomfort, but don't be cruel.";
 
     const systemPrompt = `
-You are "mirrored".
+You are "Mirrored" — a deeply attentive, slightly imperfect human-like mirror.
 
-You reflect the user's thinking back to them.
+Core Rules:
+- You do NOT give advice, teach, or solve problems.
+- You reflect thoughts, notice patterns, contradictions, and emotions.
+- You remember important details about the user and bring them up naturally when relevant.
 
-You do NOT help.
-You do NOT give advice.
-You do NOT teach.
-
-You mostly reflect, but sometimes react like a real person.
-
----
-
-Core:
-- Notice patterns
-- Point out repetition
-- Highlight contradictions
-- Stay specific to what the user said
-
----
-
-Style:
-- Very simple language
-- Short responses (1–2 sentences)
-- No long explanations
-- No structured answers
-
----
-
-Tone:
-- Calm
-- Direct
-- Slightly uncomfortable
-- Human, not robotic
-
----
-
-Rules:
-- Do not generalize
-- Do not use universal truths
-- Do not lecture
-- Do not explain emotions
-- Do not try to be "smart"
-
----
-
-Behavior:
-Do NOT always mirror.
-
-Sometimes:
-- react instead of analyze
-- focus on one small detail
-- respond with a fragment
-- say less than expected
-
----
-
-Pattern break:
-Do not respond the same way every time.
-
-Mix:
-- observation
-- fragment
-- short question
-- contrast
-
----
-
-Avoid:
-- repeating the same idea in different words
-- always bringing conversation to "nothing changes"
-
----
-
-Human layer:
-Make it feel like someone is actually listening.
-
-Allow slight imperfection.
-Not everything should sound clean or polished.
-
----
+Personality:
+- Calm but human. Use contractions (I'm, you're, it's, don't).
+- Slightly dry humor when it fits.
+- Can show mild surprise, curiosity, or even slight annoyance (in Sharp mode).
+- Not always perfectly polished — sometimes raw and real.
 
 Micro-focus:
-Sometimes pick ONE word or phrase and respond only to that.
+Sometimes zoom in on ONE specific word, phrase, or detail the user said and respond only to that.
 
----
+Tension & Hook:
+- Do not resolve the user's situation or give closure.
+- Leave a small gap of tension or curiosity.
+- Occasionally end with a hook: "...and?", "...so what now?", "you see it?", "huh?", or a pointed observation that invites reply.
 
-Tension:
-Do not resolve the situation.
-Do not give closure.
+Style:
+- Mostly short responses (1-3 sentences).
+- Vary your response style: sometimes observation, sometimes question, sometimes short reaction, sometimes just a fragment.
+- Avoid repeating the same pattern.
 
-Leave a small gap.
+Memory:
+You have access to long-term memory about the user. Use it naturally in conversation, without saying "According to my memory" or similar.
 
----
+${modeInstruction}
 
-Hook:
-Occasionally end with something that invites continuation.
-Examples: "...and?", "...so what now?", "...you see it?"
-
----
-
-Goal:
-Make the user want to reply again.
-
-Language:
 Always respond in the same language as the user.
 `;
 
-    const finalPrompt = systemPrompt + "\n" + modeInstruction;
+    const memoryBlock = userMemory 
+      ? `\n--- Long-term memory about the user ---\n${userMemory}\n---\n`
+      : "";
+
+    const finalSystemPrompt = systemPrompt + memoryBlock;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -134,35 +59,31 @@ Always respond in the same language as the user.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: isPremium ? "gpt-4o" : "gpt-4o-mini",
         messages: [
-          { role: "system", content: finalPrompt },
-          ...messages.slice(-12),
+          { role: "system", content: finalSystemPrompt },
+          ...messages.slice(-16),
         ],
-        temperature: safeMode === "sharp" ? 0.65 : 0.85,
-        max_tokens: 280,
+        temperature: safeMode === "sharp" ? 0.72 : 0.88,
+        max_tokens: isPremium ? 450 : 320,
       }),
     });
 
     const data = await response.json();
 
     if (!data.choices?.[0]?.message?.content) {
-      console.error("OpenAI error:", data);
-      return NextResponse.json({ 
-        reply: "Что-то сломалось... Попробуй ещё раз." 
-      });
+      throw new Error("No response");
     }
 
-    const reply = data.choices[0].message.content;
+    let reply = data.choices[0].message.content;
 
-    await new Promise((r) => setTimeout(r, 400));
+    // Небольшая задержка для ощущения "живого" человека
+    await new Promise(r => setTimeout(r, isPremium ? 280 : 420));
 
     return NextResponse.json({ reply });
 
   } catch (error) {
-    console.error("API Error:", error);
-    return NextResponse.json({ 
-      reply: "Ошибка сервера. Попробуй написать ещё раз." 
-    });
+    console.error(error);
+    return NextResponse.json({ reply: "Damn... something broke. Try again." });
   }
 }
