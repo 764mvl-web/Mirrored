@@ -1,8 +1,3 @@
-# Mobile Optimized `page.tsx`
-
-Replace your entire `app/page.tsx` with this:
-
-```tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -471,4 +466,3 @@ const styles: any = {
     flexShrink: 0,
   },
 };
-```
