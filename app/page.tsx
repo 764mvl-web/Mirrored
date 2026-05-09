@@ -135,24 +135,18 @@ export default function Home() {
 
           <div style={styles.modeSwitcher}>
             <button
-              style={{
-                ...styles.modeBtn,
-                ...(model === "free" ? styles.activeMode : {}),
-              }}
-              onClick={() => setModel("free")}
-            >
-              Free
-            </button>
-
-            <button
-              style={{
-                ...styles.modeBtn,
-                ...(model === "premium" ? styles.activeMode : {}),
-              }}
-              onClick={() => setModel("premium")}
-            >
-              Premium ✨
-            </button>
+  style={{
+    ...styles.modeBtn,
+    ...(model === "premium" ? styles.activeMode : {}),
+  }}
+  onClick={() => {
+    alert(
+      "Premium is limited while Mirrored evolves."
+    );
+  }}
+>
+  Premium ✨
+</button>
           </div>
         </div>
 
