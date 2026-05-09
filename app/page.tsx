@@ -1,16 +1,47 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface Chat {
+  id: number;
+  title: string;
+  messages: Message[];
+}
+
 export default function Home() {
-  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState("sharp");
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<number | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("mirrored_chats");
+
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setChats(parsed);
+
+      if (parsed.length > 0) {
+        setActiveChatId(parsed[0].id);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("mirrored_chats", JSON.stringify(chats));
+  }, [chats]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -25,62 +56,50 @@ export default function Home() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [chats, activeChatId]);
 
-  useEffect(() => {
-    const style = document.createElement("style");
+  const activeChat = chats.find((c) => c.id === activeChatId);
 
-    style.innerHTML = `
-      * {
-        box-sizing: border-box;
-      }
-
-      html, body {
-        margin: 0;
-        padding: 0;
-        background: #050505;
-        overflow: hidden;
-      }
-
-      @keyframes fadeUp {
-        from {
-          opacity: 0;
-          transform: translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0px);
-        }
-      }
-
-      @keyframes pulse {
-        0% { opacity: 0.25; }
-        50% { opacity: 0.55; }
-        100% { opacity: 0.25; }
-      }
-    `;
-
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
+  const createNewChat = () => {
+    const newChat: Chat = {
+      id: Date.now(),
+      title: "New reflection",
+      messages: [],
     };
-  }, []);
+
+    setChats([newChat, ...chats]);
+    setActiveChatId(newChat.id);
+    setSidebarOpen(false);
+  };
 
   const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !activeChat) return;
 
-    const userMessage = {
+    const userMessage: Message = {
       role: "user",
       content: input,
     };
 
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = [...activeChat.messages, userMessage];
 
-    setMessages(updatedMessages);
+    const updatedChats = chats.map((chat) =>
+      chat.id === activeChat.id
+        ? {
+            ...chat,
+            messages: updatedMessages,
+            title:
+              chat.messages.length === 0
+                ? input.slice(0, 28)
+                : chat.title,
+          }
+        : chat
+    );
+
+    setChats(updatedChats);
+
+    const currentInput = input;
     setInput("");
     setIsLoading(true);
-    setShowOnboarding(false);
 
     try {
       const response = await fetch("/api/chat", {
@@ -97,13 +116,21 @@ export default function Home() {
 
       const data = await response.json();
 
-      setMessages([
-        ...updatedMessages,
-        {
-          role: "assistant",
-          content: data.reply,
-        },
-      ]);
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: data.reply,
+      };
+
+      setChats((prevChats) =>
+        prevChats.map((chat) => {
+          if (chat.id !== activeChat.id) return chat;
+
+          return {
+            ...chat,
+            messages: [...updatedMessages, assistantMessage],
+          };
+        })
+      );
     } catch (error) {
       console.error(error);
     } finally {
@@ -117,21 +144,47 @@ export default function Home() {
         <div style={styles.sidebar}>
           <div style={styles.logo}>Mirrored</div>
 
-          <button
-            style={styles.newChatBtn}
-            onClick={() => {
-              setMessages([]);
-              setShowOnboarding(true);
-            }}
-          >
-            New reflection
+          <button style={styles.newBtn} onClick={createNewChat}>
+            + New reflection
           </button>
+
+          <div style={styles.sectionTitle}>Reflections</div>
+
+          <div style={styles.chatList}>
+            {chats.map((chat) => (
+              <div
+                key={chat.id}
+                onClick={() => setActiveChatId(chat.id)}
+                style={{
+                  ...styles.chatItem,
+                  ...(activeChatId === chat.id
+                    ? styles.activeChatItem
+                    : {}),
+                }}
+              >
+                {chat.title}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       <div style={styles.main}>
-        <div style={styles.topBar}>
-          <div style={styles.modeSwitcher}>
+        <div style={styles.topbar}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {isMobile && (
+              <button
+                style={styles.iconBtn}
+                onClick={() => setSidebarOpen(true)}
+              >
+                ☰
+              </button>
+            )}
+
+            <div style={styles.mobileLogo}>mirrored</div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10 }}>
             <button
               style={{
                 ...styles.modeBtn,
@@ -151,74 +204,107 @@ export default function Home() {
             >
               Sharp
             </button>
-          </div>
 
-          <button
-            style={styles.premiumBtn}
-            onClick={() => {
-              alert("Premium is limited while Mirrored evolves.");
-            }}
-          >
-            Premium ✨
-          </button>
+            <button
+              style={styles.crownBtn}
+              onClick={() => {
+                alert(
+                  "Premium is limited while Mirrored evolves."
+                );
+              }}
+            >
+              ♛
+            </button>
+          </div>
         </div>
 
-        <div style={styles.chatArea}>
-          {showOnboarding && messages.length === 0 ? (
-            <div style={styles.onboarding}>
-              <div style={styles.heroGlow} />
+        {isMobile && sidebarOpen && (
+          <>
+            <div
+              style={styles.overlay}
+              onClick={() => setSidebarOpen(false)}
+            />
 
-              <div style={styles.heroSmall}>Mirrored</div>
+            <div style={styles.mobileSidebar}>
+              <div style={styles.mobileSidebarHeader}>
+                <div style={styles.logo}>mirrored</div>
 
-              <h1
-                style={{
-                  ...styles.heroTitle,
-                  fontSize: isMobile ? 36 : 58,
-                }}
+                <button
+                  style={styles.iconBtn}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <button
+                style={styles.newBtn}
+                onClick={createNewChat}
               >
+                + New reflection
+              </button>
+
+              <div style={styles.sectionTitle}>Reflections</div>
+
+              <div style={styles.chatList}>
+                {chats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => {
+                      setActiveChatId(chat.id);
+                      setSidebarOpen(false);
+                    }}
+                    style={{
+                      ...styles.chatItem,
+                      ...(activeChatId === chat.id
+                        ? styles.activeChatItem
+                        : {}),
+                    }}
+                  >
+                    {chat.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        <div style={styles.chatArea}>
+          {!activeChat ? (
+            <div style={styles.emptyState}>
+              <div style={styles.heroSmall}>MIRRORED</div>
+
+              <h1 style={styles.heroTitle}>
                 Say what’s been sitting in your head.
               </h1>
 
-              <p
-                style={{
-                  ...styles.heroText,
-                  fontSize: isMobile ? 18 : 22,
-                }}
-              >
+              <p style={styles.heroText}>
                 I’ll reflect it back.
               </p>
 
-              <p style={styles.heroSubtext}>
-                Not advice. Not therapy. Just reflection.
-              </p>
-
               <button
-                onClick={() => setShowOnboarding(false)}
-                style={styles.primaryBtn}
+                style={styles.enterBtn}
+                onClick={createNewChat}
               >
                 Enter
               </button>
             </div>
           ) : (
             <>
-              {messages.map((message, index) => (
+              {activeChat.messages.map((message, index) => (
                 <div
                   key={index}
                   style={{
                     ...styles.message,
-                    maxWidth: isMobile ? "88%" : "70%",
                     alignSelf:
                       message.role === "user"
                         ? "flex-end"
                         : "flex-start",
                     background:
                       message.role === "user"
-                        ? "#161616"
-                        : "#0f0f0f",
-                    border:
-                      message.role === "assistant"
-                        ? "1px solid #1f1f1f"
-                        : "none",
+                        ? "#171717"
+                        : "#101010",
+                    maxWidth: isMobile ? "88%" : "72%",
                   }}
                 >
                   {message.content}
@@ -226,7 +312,9 @@ export default function Home() {
               ))}
 
               {isLoading && (
-                <div style={styles.loading}>reflecting...</div>
+                <div style={styles.loading}>
+                  reflecting...
+                </div>
               )}
 
               <div ref={messagesEndRef} />
@@ -261,33 +349,99 @@ const styles: any = {
     display: "flex",
     height: "100dvh",
     background: "#050505",
-    color: "#fff",
-    fontFamily: "Inter, system-ui, sans-serif",
+    color: "white",
+    overflow: "hidden",
+    fontFamily: "Inter, sans-serif",
   },
 
   sidebar: {
-    width: 270,
-    borderRight: "1px solid #1b1b1b",
+    width: 280,
+    background: "#090909",
+    borderRight: "1px solid #181818",
+    padding: 18,
     display: "flex",
     flexDirection: "column",
+    gap: 16,
+  },
+
+  mobileSidebar: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: 300,
+    height: "100dvh",
     background: "#090909",
-    padding: 16,
+    zIndex: 50,
+    padding: 18,
+    borderRight: "1px solid #181818",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(4px)",
+    zIndex: 40,
+  },
+
+  mobileSidebarHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   logo: {
     fontSize: 34,
     fontWeight: 700,
-    marginBottom: 18,
   },
 
-  newChatBtn: {
-    padding: "14px 18px",
-    borderRadius: 14,
+  mobileLogo: {
+    fontSize: 20,
+    fontWeight: 600,
+  },
+
+  newBtn: {
     border: "none",
-    background: "#fff",
-    color: "#000",
+    background: "white",
+    color: "black",
+    padding: "14px",
+    borderRadius: 14,
     cursor: "pointer",
     fontWeight: 600,
+  },
+
+  sectionTitle: {
+    fontSize: 12,
+    opacity: 0.4,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginTop: 8,
+  },
+
+  chatList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    overflowY: "auto",
+  },
+
+  chatItem: {
+    padding: "14px",
+    borderRadius: 14,
+    background: "#101010",
+    border: "1px solid #1a1a1a",
+    cursor: "pointer",
+    color: "#cfcfcf",
+    fontSize: 14,
+  },
+
+  activeChatItem: {
+    background: "#171717",
+    border: "1px solid #2b2b2b",
+    color: "white",
   },
 
   main: {
@@ -297,172 +451,135 @@ const styles: any = {
     minWidth: 0,
   },
 
-  topBar: {
+  topbar: {
     padding: "14px 18px",
-    borderBottom: "1px solid #1b1b1b",
+    borderBottom: "1px solid #181818",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    background: "rgba(5,5,5,0.9)",
-    backdropFilter: "blur(10px)",
   },
 
-  modeSwitcher: {
-    display: "flex",
-    gap: 8,
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    border: "1px solid #222",
+    background: "#111",
+    color: "white",
+    cursor: "pointer",
   },
 
   modeBtn: {
-    padding: "9px 14px",
-    borderRadius: 10,
-    border: "1px solid #252525",
-    background: "#0f0f0f",
-    color: "#fff",
+    border: "1px solid #242424",
+    background: "#101010",
+    color: "white",
+    borderRadius: 12,
+    padding: "10px 14px",
     cursor: "pointer",
-    fontSize: 14,
   },
 
   activeMode: {
-    background: "#fff",
-    color: "#000",
+    background: "white",
+    color: "black",
   },
 
-  premiumBtn: {
-    padding: "9px 14px",
-    borderRadius: 10,
-    border: "1px solid #252525",
-    background: "#0f0f0f",
-    color: "#fff",
+  crownBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    border: "1px solid #2a2a2a",
+    background: "#111",
+    color: "#f5d0a9",
     cursor: "pointer",
-    fontSize: 14,
+    fontSize: 18,
   },
 
   chatArea: {
     flex: 1,
+    overflowY: "auto",
     display: "flex",
     flexDirection: "column",
     gap: 18,
-    overflowY: "auto",
     padding: "24px 18px",
   },
 
-  onboarding: {
+  emptyState: {
     margin: "auto",
     textAlign: "center",
-    maxWidth: 720,
-    position: "relative",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "0 10px",
-  },
-
-  heroGlow: {
-    position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.03)",
-    filter: "blur(100px)",
-    zIndex: 0,
+    maxWidth: 700,
   },
 
   heroSmall: {
-    fontSize: 13,
+    opacity: 0.4,
     letterSpacing: 2,
-    textTransform: "uppercase",
-    opacity: 0.45,
-    marginBottom: 22,
-    position: "relative",
-    zIndex: 2,
+    fontSize: 12,
+    marginBottom: 18,
   },
 
   heroTitle: {
-    lineHeight: 1.05,
-    letterSpacing: "-2px",
-    fontWeight: 700,
+    fontSize: "clamp(38px, 7vw, 72px)",
+    lineHeight: 1,
     marginBottom: 18,
-    position: "relative",
-    zIndex: 2,
+    letterSpacing: -2,
   },
 
   heroText: {
-    opacity: 0.92,
-    marginBottom: 12,
-    position: "relative",
-    zIndex: 2,
+    opacity: 0.75,
+    fontSize: 22,
+    marginBottom: 30,
   },
 
-  heroSubtext: {
-    fontSize: 14,
-    opacity: 0.42,
-    marginBottom: 36,
-    position: "relative",
-    zIndex: 2,
-    lineHeight: 1.5,
-  },
-
-  primaryBtn: {
-    padding: "14px 28px",
-    borderRadius: 14,
+  enterBtn: {
     border: "none",
-    background: "#fff",
-    color: "#000",
+    background: "white",
+    color: "black",
+    padding: "14px 30px",
+    borderRadius: 16,
     cursor: "pointer",
     fontWeight: 600,
-    fontSize: 15,
-    position: "relative",
-    zIndex: 2,
   },
 
   message: {
     padding: "16px 18px",
     borderRadius: 18,
     lineHeight: 1.7,
-    fontSize: 15.5,
-    animation: "fadeUp 0.18s ease",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
   },
 
   loading: {
-    alignSelf: "flex-start",
-    padding: "10px 16px",
-    opacity: 0.38,
+    opacity: 0.4,
     fontStyle: "italic",
-    animation: "pulse 1.6s infinite",
   },
 
   inputArea: {
+    padding: 16,
+    borderTop: "1px solid #181818",
     display: "flex",
     gap: 12,
-    padding: "16px",
     paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
-    borderTop: "1px solid #1b1b1b",
-    background: "#050505",
   },
 
   input: {
     flex: 1,
-    padding: "16px 18px",
     background: "#101010",
-    border: "1px solid #262626",
+    border: "1px solid #222",
     borderRadius: 16,
-    color: "#fff",
+    padding: "16px 18px",
+    color: "white",
     fontSize: 16,
     outline: "none",
   },
 
   sendBtn: {
-    width: 54,
-    height: 54,
+    width: 56,
+    height: 56,
     borderRadius: 16,
     border: "none",
-    background: "#fff",
-    color: "#000",
-    fontSize: 22,
+    background: "white",
+    color: "black",
     cursor: "pointer",
-    flexShrink: 0,
+    fontSize: 22,
   },
 };
+
