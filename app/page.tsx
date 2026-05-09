@@ -1,4 +1,8 @@
+# Mobile Optimized `page.tsx`
 
+Replace your entire `app/page.tsx` with this:
+
+```tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -8,10 +12,21 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState("sharp");
-  const [model, setModel] = useState("free");
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -21,10 +36,21 @@ export default function Home() {
     const style = document.createElement("style");
 
     style.innerHTML = `
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #050505;
+        overflow: hidden;
+      }
+
       @keyframes fadeUp {
         from {
           opacity: 0;
-          transform: translateY(6px);
+          transform: translateY(8px);
         }
         to {
           opacity: 1;
@@ -70,7 +96,7 @@ export default function Home() {
         body: JSON.stringify({
           messages: updatedMessages,
           mode,
-          model,
+          model: "free",
         }),
       });
 
@@ -92,22 +118,21 @@ export default function Home() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sidebar}>
-        <div style={styles.logo}>Mirrored</div>
+      {!isMobile && (
+        <div style={styles.sidebar}>
+          <div style={styles.logo}>Mirrored</div>
 
-        <button
-          style={styles.newChatBtn}
-          onClick={() => {
-            setMessages([]);
-            setShowOnboarding(true);
-          }}
-        >
-          New reflection
-        </button>
-
-        <div style={styles.conversationItem}>New Conversation</div>
-
-      </div>
+          <button
+            style={styles.newChatBtn}
+            onClick={() => {
+              setMessages([]);
+              setShowOnboarding(true);
+            }}
+          >
+            New reflection
+          </button>
+        </div>
+      )}
 
       <div style={styles.main}>
         <div style={styles.topBar}>
@@ -133,21 +158,14 @@ export default function Home() {
             </button>
           </div>
 
-          <div style={styles.modeSwitcher}>
-            <button
-  style={{
-    ...styles.modeBtn,
-    ...(model === "premium" ? styles.activeMode : {}),
-  }}
-  onClick={() => {
-    alert(
-      "Premium is limited while Mirrored evolves."
-    );
-  }}
->
-  Premium ✨
-</button>
-          </div>
+          <button
+            style={styles.premiumBtn}
+            onClick={() => {
+              alert("Premium is limited while Mirrored evolves.");
+            }}
+          >
+            Premium ✨
+          </button>
         </div>
 
         <div style={styles.chatArea}>
@@ -157,11 +175,21 @@ export default function Home() {
 
               <div style={styles.heroSmall}>Mirrored</div>
 
-              <h1 style={styles.heroTitle}>
+              <h1
+                style={{
+                  ...styles.heroTitle,
+                  fontSize: isMobile ? 36 : 58,
+                }}
+              >
                 Say what’s been sitting in your head.
               </h1>
 
-              <p style={styles.heroText}>
+              <p
+                style={{
+                  ...styles.heroText,
+                  fontSize: isMobile ? 18 : 22,
+                }}
+              >
                 I’ll reflect it back.
               </p>
 
@@ -183,6 +211,7 @@ export default function Home() {
                   key={index}
                   style={{
                     ...styles.message,
+                    maxWidth: isMobile ? "88%" : "70%",
                     alignSelf:
                       message.role === "user"
                         ? "flex-end"
@@ -235,7 +264,7 @@ export default function Home() {
 const styles: any = {
   container: {
     display: "flex",
-    height: "100vh",
+    height: "100dvh",
     background: "#050505",
     color: "#fff",
     fontFamily: "Inter, system-ui, sans-serif",
@@ -263,31 +292,23 @@ const styles: any = {
     background: "#fff",
     color: "#000",
     cursor: "pointer",
-    marginBottom: 20,
     fontWeight: 600,
   },
-
-  conversationItem: {
-    padding: "14px 16px",
-    borderRadius: 12,
-    background: "#121212",
-    color: "#fff",
-  },
-
-  
 
   main: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
+    minWidth: 0,
   },
 
   topBar: {
-    padding: "14px 24px",
+    padding: "14px 18px",
     borderBottom: "1px solid #1b1b1b",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    background: "rgba(5,5,5,0.9)",
     backdropFilter: "blur(10px)",
   },
 
@@ -297,17 +318,28 @@ const styles: any = {
   },
 
   modeBtn: {
-    padding: "10px 16px",
+    padding: "9px 14px",
     borderRadius: 10,
     border: "1px solid #252525",
     background: "#0f0f0f",
     color: "#fff",
     cursor: "pointer",
+    fontSize: 14,
   },
 
   activeMode: {
     background: "#fff",
     color: "#000",
+  },
+
+  premiumBtn: {
+    padding: "9px 14px",
+    borderRadius: 10,
+    border: "1px solid #252525",
+    background: "#0f0f0f",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 14,
   },
 
   chatArea: {
@@ -316,7 +348,7 @@ const styles: any = {
     flexDirection: "column",
     gap: 18,
     overflowY: "auto",
-    padding: 28,
+    padding: "24px 18px",
   },
 
   onboarding: {
@@ -328,40 +360,39 @@ const styles: any = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
+    padding: "0 10px",
   },
 
   heroGlow: {
     position: "absolute",
-    width: 420,
-    height: 420,
+    width: 320,
+    height: 320,
     borderRadius: "50%",
     background: "rgba(255,255,255,0.03)",
-    filter: "blur(120px)",
+    filter: "blur(100px)",
     zIndex: 0,
   },
 
   heroSmall: {
-    fontSize: 14,
+    fontSize: 13,
     letterSpacing: 2,
     textTransform: "uppercase",
-    opacity: 0.5,
-    marginBottom: 24,
+    opacity: 0.45,
+    marginBottom: 22,
     position: "relative",
     zIndex: 2,
   },
 
   heroTitle: {
-    fontSize: 58,
     lineHeight: 1.05,
     letterSpacing: "-2px",
     fontWeight: 700,
-    marginBottom: 20,
+    marginBottom: 18,
     position: "relative",
     zIndex: 2,
   },
 
   heroText: {
-    fontSize: 22,
     opacity: 0.92,
     marginBottom: 12,
     position: "relative",
@@ -369,15 +400,16 @@ const styles: any = {
   },
 
   heroSubtext: {
-    fontSize: 15,
+    fontSize: 14,
     opacity: 0.42,
-    marginBottom: 42,
+    marginBottom: 36,
     position: "relative",
     zIndex: 2,
+    lineHeight: 1.5,
   },
 
   primaryBtn: {
-    padding: "14px 30px",
+    padding: "14px 28px",
     borderRadius: 14,
     border: "none",
     background: "#fff",
@@ -390,13 +422,13 @@ const styles: any = {
   },
 
   message: {
-    maxWidth: "70%",
-    padding: "16px 20px",
+    padding: "16px 18px",
     borderRadius: 18,
     lineHeight: 1.7,
     fontSize: 15.5,
     animation: "fadeUp 0.18s ease",
     whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
   },
 
   loading: {
@@ -409,32 +441,34 @@ const styles: any = {
 
   inputArea: {
     display: "flex",
-    gap: 14,
-    padding: 24,
+    gap: 12,
+    padding: "16px",
+    paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
     borderTop: "1px solid #1b1b1b",
+    background: "#050505",
   },
 
   input: {
     flex: 1,
-    padding: "17px 20px",
+    padding: "16px 18px",
     background: "#101010",
     border: "1px solid #262626",
     borderRadius: 16,
     color: "#fff",
-    fontSize: 15.5,
+    fontSize: 16,
     outline: "none",
-    transition: "0.2s",
   },
 
   sendBtn: {
-    width: 56,
-    height: 56,
+    width: 54,
+    height: 54,
     borderRadius: 16,
     border: "none",
     background: "#fff",
     color: "#000",
     fontSize: 22,
     cursor: "pointer",
-    transition: "0.2s",
+    flexShrink: 0,
   },
 };
+```
