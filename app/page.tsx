@@ -84,7 +84,7 @@ export default function Home() {
     setIsLoading(true);
     setShowOnboarding(false);
 
-    // ... (остальная логика sendMessage без изменений)
+    
     setChats(prev => prev.map(chat =>
       chat.id === currentChatId ? { ...chat, messages: newMessages } : chat
     ));
@@ -184,9 +184,9 @@ export default function Home() {
               <h1 style={{ fontSize: 54, marginBottom: 32 }}>Mirror your mind.</h1>
               
               <div style={{ fontSize: 21, lineHeight: 1.6, opacity: 0.95, maxWidth: 460 }}>
-                <p>1. You say what&apos;s been sitting in your head</p>
-                <p>2. I reflect it back</p>
-                <p>3. Some things become difficult to ignore</p>
+                <p> You say what&apos;s been sitting in your head</p>
+                <p> I reflect it back</p>
+                <p> Some things become difficult to ignore</p>
               </div>
 
               <button 
